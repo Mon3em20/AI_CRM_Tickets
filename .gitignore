@@ -249,12 +249,12 @@ docker-compose.override.yml
 config.json
 secrets.json
 
-# AI/ML specific
-models/
-*.model
-*.pkl
-*.h5
-checkpoints/
+# AI/ML specific - Only ignore large ML model files, not code
+# models/  # REMOVED - Don't ignore model directories with source code
+*.model   # Keep this - ignore binary model files
+*.pkl     # Keep this - ignore pickle files
+*.h5      # Keep this - ignore HDF5 model files
+checkpoints/  # Keep this - ignore training checkpoints
 tensorboard_logs/
 
 # MongoDB
@@ -297,9 +297,9 @@ Desktop.ini
 
 # Project specific
 # Add any project-specific files or directories here
-ai-service/models/
-backend/uploads/
-frontend/build/
-logs/
-.env.production
-.env.staging
+# ai-service/models/  # REMOVED - Don't ignore AI service model source code
+backend/uploads/      # Keep this - ignore uploaded files
+frontend/build/       # Keep this - ignore build output
+logs/                 # Keep this - ignore log files
+.env.production       # Keep this - ignore production env
+.env.staging          # Keep this - ignore staging env
