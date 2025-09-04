@@ -5,6 +5,8 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const path = require('path');
 
 // Import configuration
 const config = require('./config/env');
@@ -13,8 +15,8 @@ const connectDB = require('./config/db');
 // Import models to ensure they're registered
 require('./models');
 
-// Import routes (when they're created)
-// const authRoutes = require('./routes/authRoutes');
+// Import routes
+const authRoutes = require('./routes/authRoutes');
 // const ticketRoutes = require('./routes/ticketRoutes');
 // const agentRoutes = require('./routes/agentRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
@@ -25,6 +27,16 @@ const app = express();
 
 // Connect to MongoDB
 connectDB();
+
+// Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('Uploads directory created');
+}
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Security middleware
 app.use(helmet({
@@ -52,16 +64,16 @@ app.use('/api', limiter);
 app.use(cors({
   origin: config.CLIENT_ORIGIN,
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
 // Compression middleware
 app.use(compression());
 
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Increase payload size limit
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Cookie parser
 app.use(cookieParser());
@@ -100,8 +112,8 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Routes (uncomment when route files are created)
-// app.use('/api/auth', authRoutes);
+// Routes
+app.use('/api/auth/', authRoutes);
 // app.use('/api/tickets', ticketRoutes);
 // app.use('/api/agent', agentRoutes);
 // app.use('/api/admin', adminRoutes);
@@ -172,11 +184,47 @@ app.use((error, req, res, next) => {
   });
 });
 
+// Start server
+const PORT = process.env.PORT;
+
+const server = app.listen(PORT, () => {
+  console.log('=================================');
+  console.log('🚀 CRM Ticket System Backend');
+  console.log('=================================');
+  console.log(`📡 Server running on port: ${PORT}`);
+  console.log(`🌍 Environment: ${config.NODE_ENV}`);
+  console.log(`🔗 Client Origin: ${config.CLIENT_ORIGIN}`);
+  console.log(`📊 Database: ${config.DB_NAME}`);
+  console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+  console.log(`📋 API Status: http://localhost:${PORT}/api/status`);
+  console.log(`📋 API Auth: http://localhost:${PORT}/api/auth`);
+  console.log('=================================');
+});
+
+// Handle server shutdown gracefully
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed. Process terminated.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed. Process terminated.');
+    process.exit(0);
+  });
+});
+
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.error('Unhandled Promise Rejection:', err.message);
   // Close server & exit process
-  process.exit(1);
+  server.close(() => {
+    process.exit(1);
+  });
 });
 
 // Handle uncaught exceptions
@@ -185,4 +233,4 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-module.exports = app;
+module.exports = server;

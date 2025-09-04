@@ -2,10 +2,10 @@
   "name": "crm-tickets-backend",
   "version": "1.0.0",
   "description": "AI-powered CRM Ticket System Backend",
-  "main": "src/server.js",
+  "main": "src/app.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js",
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "lint": "eslint src/",
