@@ -1,155 +1,94 @@
-<<<<<<< HEAD
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { getTickets, submitTicket } from '../../api/agentApi';
 
-const AgentDashboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+const Dashboard = () => {
+  const [tickets, setTickets] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [formData, setFormData] = useState({ title: '', description: '', category: '', priority: 'medium' });
 
-  const handleLogout = async () => {
-    const result = await logout();
-    if (result.success) {
-      navigate('/login');
+  useEffect(() => {
+    loadTickets();
+  }, []);
+
+  const loadTickets = async () => {
+    try {
+      const response = await getTickets();
+      setTickets(response.data.data);
+    } catch (error) {
+      console.error('Error loading tickets:', error);
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await submitTicket(formData);
+      setFormData({ title: '', description: '', category: '', priority: 'medium' });
+      setShowForm(false);
+      loadTickets();
+    } catch (error) {
+      console.error('Error submitting ticket:', error);
+    }
+  };
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1>Agent Dashboard</h1>
-          <button onClick={handleLogout} className="logout-button">
-            Logout
-          </button>
-        </div>
-      </header>
+    <div>
+      <h2>My Tickets</h2>
+      <button onClick={() => setShowForm(!showForm)}>
+        {showForm ? 'Cancel' : 'New Ticket'}
+      </button>
 
-      <main className="dashboard-main">
-        <div className="welcome-section">
-          <h2>Welcome back, Agent {user?.name}!</h2>
-          <p>Manage customer tickets and provide support.</p>
-        </div>
+      {showForm && (
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="title"
+            placeholder="Title"
+            value={formData.title}
+            onChange={handleChange}
+            required
+          />
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleChange}
+            required
+          />
+          <input
+            type="text"
+            name="category"
+            placeholder="Category"
+            value={formData.category}
+            onChange={handleChange}
+            required
+          />
+          <select name="priority" value={formData.priority} onChange={handleChange}>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <button type="submit">Submit Ticket</button>
+        </form>
+      )}
 
-        <div className="dashboard-grid">
-          {/* User Information Card */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h3>Agent Information</h3>
-            </div>
-            <div className="card-content">
-              <div className="user-info">
-                <div className="user-avatar">
-                  {user?.name?.charAt(0).toUpperCase()}
-                </div>
-                <div className="user-details">
-                  <h4>{user?.name}</h4>
-                  <p className="user-email">{user?.email}</p>
-                  <span className="user-role agent-role">
-                    AGENT
-                  </span>
-                </div>
-              </div>
-              
-              <div className="info-grid">
-                <div className="info-item">
-                  <label>Phone:</label>
-                  <span>{user?.phone || 'Not provided'}</span>
-                </div>
-                <div className="info-item">
-                  <label>Agent Since:</label>
-                  <span>{user?.createdAt ? formatDate(user.createdAt) : 'N/A'}</span>
-                </div>
-                <div className="info-item">
-                  <label>Agent ID:</label>
-                  <span className="user-id">{user?.id}</span>
-                </div>
-              </div>
-            </div>
+      <div>
+        {tickets.map(ticket => (
+          <div key={ticket._id} style={{ border: '1px solid #ccc', margin: '10px', padding: '10px' }}>
+            <h3>{ticket.title}</h3>
+            <p>Status: {ticket.status}</p>
+            <p>Priority: {ticket.priority}</p>
+            <p>Created: {new Date(ticket.createdAt).toLocaleDateString()}</p>
           </div>
-
-          {/* Agent Actions Card */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h3>Agent Actions</h3>
-            </div>
-            <div className="card-content">
-              <div className="action-buttons">
-                <button className="action-button primary">
-                  View Assigned Tickets
-                </button>
-                <button className="action-button secondary">
-                  Update Ticket Status
-                </button>
-                <button className="action-button secondary">
-                  Knowledge Base
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Workload Summary Card */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h3>My Workload</h3>
-            </div>
-            <div className="card-content">
-              <div className="ticket-stats">
-                <div className="stat-item">
-                  <div className="stat-number">0</div>
-                  <div className="stat-label">Assigned</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">0</div>
-                  <div className="stat-label">In Progress</div>
-                </div>
-                <div className="stat-item">
-                  <div className="stat-number">0</div>
-                  <div className="stat-label">Completed Today</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Performance Card */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h3>Performance</h3>
-            </div>
-            <div className="card-content">
-              <div className="performance-stats">
-                <div className="performance-item">
-                  <label>Average Resolution Time:</label>
-                  <span>N/A</span>
-                </div>
-                <div className="performance-item">
-                  <label>Customer Satisfaction:</label>
-                  <span>N/A</span>
-                </div>
-                <div className="performance-item">
-                  <label>Tickets Resolved:</label>
-                  <span>0</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
+        ))}
+      </div>
     </div>
   );
 };
 
-<<<<<<< HEAD
-export default AgentDashboard;
-=======
 export default Dashboard;
->>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
