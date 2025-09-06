@@ -1,12 +1,16 @@
 import React from 'react'
+import { AuthProvider } from './context/AuthContext'
+import AppRoutes from './routes/AppRoutes'
 import './App.css'
 
 function App() {
 
   return (
-    <div className="App">
-      <p>Start prompting (or editing) to see magic happen :)</p>
-    </div>
+    <AuthProvider>
+      <div className="App">
+        <AppRoutes />
+      </div>
+    </AuthProvider>
   )
 }
 
