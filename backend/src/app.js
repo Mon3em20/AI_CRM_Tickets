@@ -5,8 +5,6 @@ const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
-const fs = require('fs');
-const path = require('path');
 
 // Import configuration
 const config = require('./config/env');
@@ -18,7 +16,6 @@ require('./models');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const agentRoutes = require('./routes/agentRoutes');
-const ticketRoutes = require('./routes/ticketRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
 // const aiRoutes = require('./routes/aiRoutes');
 
@@ -27,16 +24,6 @@ const app = express();
 
 // Connect to MongoDB
 connectDB();
-
-// Create uploads directory if it doesn't exist
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    console.log('Uploads directory created');
-}
-
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Security middleware
 app.use(helmet({
@@ -115,7 +102,6 @@ app.get('/api/status', (req, res) => {
 // Routes
 app.use('/api/auth/', authRoutes);
 app.use('/api/agent', agentRoutes);
-app.use('/api/tickets', ticketRoutes);
 // app.use('/api/admin', adminRoutes);
 // app.use('/api/ai', aiRoutes);
 
