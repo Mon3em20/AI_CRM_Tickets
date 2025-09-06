@@ -18,6 +18,7 @@ require('./models');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const agentRoutes = require('./routes/agentRoutes');
+const ticketRoutes = require('./routes/ticketRoutes');
 // const adminRoutes = require('./routes/adminRoutes');
 // const aiRoutes = require('./routes/aiRoutes');
 
@@ -114,6 +115,7 @@ app.get('/api/status', (req, res) => {
 // Routes
 app.use('/api/auth/', authRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/tickets', ticketRoutes);
 // app.use('/api/tickets', ticketRoutes);
 // app.use('/api/admin', adminRoutes);
 // app.use('/api/ai', aiRoutes);
