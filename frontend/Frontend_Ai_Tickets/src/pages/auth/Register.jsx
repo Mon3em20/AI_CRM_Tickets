@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -21,10 +22,24 @@ const Register = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+=======
+import React, { useState } from 'react';
+import { register } from '../../api/authApi';
+import { useAuth } from '../../context/AuthContext';
+
+const Register = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
+  const [error, setError] = useState('');
+  const { checkAuth } = useAuth();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+<<<<<<< HEAD
     
     if (!formData.name || !formData.email || !formData.password) {
       toast.error('Please fill in all required fields');
@@ -56,10 +71,18 @@ const Register = () => {
       toast.error('An error occurred during registration');
     } finally {
       setLoading(false);
+=======
+    try {
+      await register(formData);
+      await checkAuth();
+    } catch (error) {
+      setError(error.response?.data?.message || 'Registration failed');
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
     }
   };
 
   return (
+<<<<<<< HEAD
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
@@ -165,8 +188,51 @@ const Register = () => {
           </p>
         </div>
       </div>
+=======
+    <div>
+      <h2>Register</h2>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="name"
+          placeholder="Name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone"
+          value={formData.phone}
+          onChange={handleChange}
+        />
+        <button type="submit">Register</button>
+      </form>
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Register;
+=======
+export default Register;
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621

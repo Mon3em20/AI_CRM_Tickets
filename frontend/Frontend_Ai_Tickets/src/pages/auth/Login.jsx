@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -17,10 +18,24 @@ const Login = () => {
       ...formData,
       [e.target.name]: e.target.value
     });
+=======
+import React, { useState } from 'react';
+import { login } from '../../api/authApi';
+import { useAuth } from '../../context/AuthContext';
+
+const Login = () => {
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const { checkAuth } = useAuth();
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+<<<<<<< HEAD
     
     if (!formData.email || !formData.password) {
       toast.error('Please fill in all fields');
@@ -41,10 +56,18 @@ const Login = () => {
       toast.error('An error occurred during login');
     } finally {
       setLoading(false);
+=======
+    try {
+      await login(formData);
+      await checkAuth();
+    } catch (error) {
+      setError(error.response?.data?.message || 'Login failed');
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
     }
   };
 
   return (
+<<<<<<< HEAD
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
@@ -98,8 +121,36 @@ const Login = () => {
           </p>
         </div>
       </div>
+=======
+    <div>
+      <h2>Login</h2>
+      {error && <div style={{ color: 'red' }}>{error}</div>}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+        <button type="submit">Login</button>
+      </form>
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
     </div>
   );
 };
 
+<<<<<<< HEAD
 export default Login;
+=======
+export default Login;
+>>>>>>> 9d7b88341bc3556d525b618e45ef447858740621
