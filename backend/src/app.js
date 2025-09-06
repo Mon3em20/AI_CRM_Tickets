@@ -116,7 +116,6 @@ app.get('/api/status', (req, res) => {
 app.use('/api/auth/', authRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/tickets', ticketRoutes);
-// app.use('/api/tickets', ticketRoutes);
 // app.use('/api/admin', adminRoutes);
 // app.use('/api/ai', aiRoutes);
 
