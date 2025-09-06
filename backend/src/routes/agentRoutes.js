@@ -11,7 +11,11 @@ router.use(authentication);
 // Apply authorization - only agents and admins can access these routes
 router.use(authorization(['agent', 'admin']));
 
-// Agent Routes
+// Agent Routes - View tickets with AI suggestions
+router.get('/tickets', agentController.getAgentTickets);
+router.get('/tickets/:id', agentController.getTicketDetails);
+
+// Agent Routes - Handle AI responses
 router.put('/tickets/:id/ai-response', agentController.handleAiResponse);
 router.post('/tickets/:id/escalate', agentController.escalateTicket);
 router.post('/tickets/:id/replies', agentController.addReply);

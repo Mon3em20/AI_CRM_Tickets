@@ -1,10 +1,40 @@
-import axios from 'axios';
+// Note: Admin routes are commented out in backend app.js
+// These functions are placeholders matching the current backend structure
 
-const API_BASE = '/api/admin';
+export const getAnalytics = () => {
+  // Since admin routes are not implemented yet, return mock data
+  return Promise.resolve({
+    totalTickets: 0,
+    activeUsers: 0,
+    avgResponseTime: 0,
+    resolutionRate: 0
+  });
+};
 
-export const getAnalytics = () => axios.get(`${API_BASE}/analytics`).then(res => res.data);
-export const getAuditLogs = (params = {}) => axios.get(`${API_BASE}/audit`, { params }).then(res => res.data);
-export const listSLA = () => axios.get(`${API_BASE}/sla`).then(res => res.data);
-export const createSLA = (data) => axios.post(`${API_BASE}/sla`, data).then(res => res.data);
-export const editSLA = (id, data) => axios.put(`${API_BASE}/sla/${id}`, data).then(res => res.data);
-export const deleteSLA = (id) => axios.delete(`${API_BASE}/sla/${id}`).then(res => res.data);
+export const getAuditLogs = () => {
+  // Placeholder for when admin routes are implemented
+  return Promise.resolve([]);
+};
+
+export const listSLA = () => {
+  // Placeholder for SLA management
+  return Promise.resolve({
+    slaPolicies: [],
+    categories: []
+  });
+};
+
+export const createSLA = (data) => {
+  // Placeholder for SLA creation
+  return Promise.resolve(data);
+};
+
+export const editSLA = (id, data) => {
+  // Placeholder for SLA editing
+  return Promise.resolve(data);
+};
+
+export const deleteSLA = (id) => {
+  // Placeholder for SLA deletion
+  return Promise.resolve({ id });
+};

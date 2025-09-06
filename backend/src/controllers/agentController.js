@@ -1,6 +1,80 @@
 const { Ticket, User, AiLog, AuditLog } = require('../models');
 
 const agentController = {
+  // GET /api/agent/tickets - List all assigned tickets with filters
+  getAgentTickets: async (req, res) => {
+    try {
+      const agentId = req.user.userId;
+      const { status, priority, sla } = req.query;
+
+      // Build filter query
+      let filter = { assignedAgent: agentId };
+      
+      if (status) {
+        filter.status = status;
+      }
+      if (priority) {
+        filter.priority = priority;
+      }
+      if (sla === 'critical') {
+        // Filter tickets with SLA breach risk
+        filter['sla.breachTime'] = { $lte: new Date() };
+      }
+
+      const tickets = await Ticket.find(filter)
+        .populate('customer', 'name email')
+        .populate('slaPolicy', 'name responseTime resolutionTime')
+        .sort({ priority: -1, createdAt: -1 });
+
+      res.status(200).json({
+        status: 'success',
+        data: tickets
+      });
+
+    } catch (error) {
+      console.error('Error fetching agent tickets:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Server error'
+      });
+    }
+  },
+
+  // GET /api/agent/tickets/:id - View full ticket details + AI suggestions
+  getTicketDetails: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const agentId = req.user.userId;
+
+      const ticket = await Ticket.findOne({ 
+        _id: id, 
+        assignedAgent: agentId 
+      })
+        .populate('customer', 'name email phone')
+        .populate('assignedAgent', 'name email')
+        .populate('slaPolicy', 'name responseTime resolutionTime priorities');
+
+      if (!ticket) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Ticket not found or not assigned to you'
+        });
+      }
+
+      res.status(200).json({
+        status: 'success',
+        data: ticket
+      });
+
+    } catch (error) {
+      console.error('Error fetching ticket details:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Server error'
+      });
+    }
+  },
+
   // PUT /api/agent/tickets/:id/ai-response - Approve/edit/reject AI draft reply
   handleAiResponse: async (req, res) => {
     try {

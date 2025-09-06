@@ -1,49 +1,86 @@
 import React, { useState } from 'react';
-import { login } from '../../api/authApi';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate, Link } from 'react-router-dom';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
-  const { checkAuth } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error when user types
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     try {
-      await login(formData);
-      await checkAuth();
+      const result = await login(formData);
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        setError(result.error);
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
+      setError('Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div>
-      <h2>Login</h2>
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Login</button>
-      </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h1>CRM System</h1>
+          <h2>Welcome Back</h2>
+          <p>Sign in to your account</p>
+        </div>
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign In'}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          <p>
+            Don't have an account? <Link to="/register" className="auth-link">Sign up</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
