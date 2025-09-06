@@ -16,7 +16,7 @@ export const agentApi = {
       });
       return response.data;
     } catch (error) {
-      throw error.response?.data || error;
+      throwt error.response?.data || error;
     }
   },
 
