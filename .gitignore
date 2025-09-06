@@ -303,3 +303,5 @@ frontend/build/       # Keep this - ignore build output
 logs/                 # Keep this - ignore log files
 .env.production       # Keep this - ignore production env
 .env.staging          # Keep this - ignore staging env
+bolt.new/
+.env
