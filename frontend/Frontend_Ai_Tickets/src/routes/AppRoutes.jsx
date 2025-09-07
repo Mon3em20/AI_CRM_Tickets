@@ -18,6 +18,11 @@ import TicketReview from '../pages/agent/TicketReview';
 import AdminDashboard from '../pages/admin/Dashboard';
 import SLAConfig from '../pages/admin/SLAConfig';
 import KBManager from '../pages/admin/KBManager';
+import AuditLogs from '../pages/admin/AuditLogs';
+import UserManager from '../pages/admin/UserManager';
+
+// Shared Components
+import Profile from '../components/Profile';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
@@ -158,10 +163,26 @@ const AppRoutes = () => {
       
       {/* Admin Routes */}
       <Route 
+        path="/admin/dashboard" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/admin/analytics" 
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/users" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <UserManager />
           </ProtectedRoute>
         } 
       />
@@ -178,6 +199,24 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <KBManager />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/audit" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AuditLogs />
+          </ProtectedRoute>
+        } 
+      />
+      
+      {/* Profile Route - Available to all authenticated users */}
+      <Route 
+        path="/profile" 
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         } 
       />

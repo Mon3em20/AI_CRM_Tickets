@@ -165,6 +165,59 @@ const authController = {
             console.error("Get profile error:", error);
             res.status(500).json({ message: "Server error" });
         }
+    },
+
+    updateProfile: async (req, res) => {
+        try {
+            const userId = req.user.userId;
+            const { name, phone } = req.body;
+
+            // Validate input
+            if (!name || name.trim().length === 0) {
+                return res.status(400).json({ message: "Name is required" });
+            }
+
+            const updateData = {
+                name: name.trim(),
+                updatedAt: new Date()
+            };
+
+            // Only update phone if provided
+            if (phone !== undefined) {
+                updateData.phone = phone.trim();
+            }
+
+            const user = await User.findByIdAndUpdate(
+                userId,
+                updateData,
+                { new: true, runValidators: true }
+            ).select('-password');
+
+            if (!user) {
+                return res.status(404).json({ message: "User not found" });
+            }
+
+            res.status(200).json({
+                message: "Profile updated successfully",
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role,
+                    phone: user.phone,
+                    lastLogin: user.lastLogin,
+                    createdAt: user.createdAt,
+                    updatedAt: user.updatedAt
+                }
+            });
+
+        } catch (error) {
+            console.error("Update profile error:", error);
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({ message: error.message });
+            }
+            res.status(500).json({ message: "Server error" });
+        }
     }
 };
 

@@ -91,6 +91,7 @@ AI-CRM-MVP/
 │   │   │   │   ├── Dashboard.jsx
 │   │   │   │   └── TicketReview.jsx
 │   │   │   └── admin/
+│   │   │       ├── AuditLogs.jsx
 │   │   │       ├── Dashboard.jsx
 │   │   │       ├── SLAConfig.jsx
 │   │   │       └── KBManager.jsx

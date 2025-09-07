@@ -9,24 +9,74 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    startDate: '',
+    endDate: '',
+    category: '',
+    priority: ''
+  });
 
   useEffect(() => {
     loadAnalytics();
   }, []);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = async (filterParams = {}) => {
     try {
-      const data = await getAnalytics();
+      setLoading(true);
+      const data = await getAnalytics(filterParams);
       setAnalytics(data);
+      setError(null);
     } catch (error) {
       console.error('Error loading analytics:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const applyFilters = () => {
+    const activeFilters = {};
+    Object.keys(filters).forEach(key => {
+      if (filters[key]) activeFilters[key] = filters[key];
+    });
+    loadAnalytics(activeFilters);
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      startDate: '',
+      endDate: '',
+      category: '',
+      priority: ''
+    });
+    loadAnalytics();
+  };
+
   if (loading) {
     return <LoadingSpinner message="Loading admin dashboard..." />;
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-layout">
+        <Navbar />
+        <div className="dashboard-content">
+          <Sidebar />
+          <main className="main-content">
+            <div className="dashboard-header">
+              <h1>Admin Dashboard</h1>
+              <div className="error-message">Error: {error}</div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -40,100 +90,145 @@ const AdminDashboard = () => {
             <p>Welcome back, {user?.name}! Here's your system overview.</p>
           </div>
 
+          {/* Filters */}
+          <div className="analytics-filters">
+            <div className="filter-group">
+              <label>Start Date:</label>
+              <input
+                type="date"
+                name="startDate"
+                value={filters.startDate}
+                onChange={handleFilterChange}
+              />
+            </div>
+            <div className="filter-group">
+              <label>End Date:</label>
+              <input
+                type="date"
+                name="endDate"
+                value={filters.endDate}
+                onChange={handleFilterChange}
+              />
+            </div>
+            <div className="filter-group">
+              <label>Category:</label>
+              <input
+                type="text"
+                name="category"
+                value={filters.category}
+                onChange={handleFilterChange}
+                placeholder="e.g., technical, billing"
+              />
+            </div>
+            <div className="filter-group">
+              <label>Priority:</label>
+              <select
+                name="priority"
+                value={filters.priority}
+                onChange={handleFilterChange}
+              >
+                <option value="">All Priorities</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div className="filter-actions">
+              <button onClick={applyFilters} className="btn-primary">Apply Filters</button>
+              <button onClick={clearFilters} className="btn-secondary">Clear</button>
+            </div>
+          </div>
+
           {/* Key Metrics */}
           <div className="metrics-grid">
             <div className="metric-card">
               <h3>Total Tickets</h3>
               <div className="metric-number">{analytics?.totalTickets || 0}</div>
-              <div className="metric-change">+{analytics?.ticketsThisWeek || 0} this week</div>
+              <div className="metric-label">All tickets</div>
             </div>
             
             <div className="metric-card">
-              <h3>Active Users</h3>
-              <div className="metric-number">{analytics?.activeUsers || 0}</div>
-              <div className="metric-change">+{analytics?.newUsersThisWeek || 0} new this week</div>
+              <h3>SLA Compliance</h3>
+              <div className="metric-number">{analytics?.slaComplianceRate || 0}%</div>
+              <div className="metric-label">Within SLA targets</div>
             </div>
             
             <div className="metric-card">
-              <h3>Avg Response Time</h3>
-              <div className="metric-number">{analytics?.avgResponseTime || 0}h</div>
-              <div className="metric-change">-2h vs last week</div>
+              <h3>AI Accuracy</h3>
+              <div className="metric-number">{analytics?.aiAccuracy || 0}%</div>
+              <div className="metric-label">AI response accuracy</div>
             </div>
             
             <div className="metric-card">
               <h3>Resolution Rate</h3>
               <div className="metric-number">{analytics?.resolutionRate || 0}%</div>
-              <div className="metric-change">+5% vs last week</div>
+              <div className="metric-label">Tickets resolved</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>Backlog</h3>
+              <div className="metric-number">{analytics?.backlogCount || 0}</div>
+              <div className="metric-label">Open tickets</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>Avg Resolution Time</h3>
+              <div className="metric-number">{analytics?.avgResolutionTimeHours || 0}h</div>
+              <div className="metric-label">Average time to resolve</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>SLA Breaches</h3>
+              <div className="metric-number">{analytics?.slaBreachCount || 0}</div>
+              <div className="metric-label">SLA violations</div>
+            </div>
+
+            <div className="metric-card">
+              <h3>Auto-Response Rate</h3>
+              <div className="metric-number">{analytics?.autoResponseRate || 0}%</div>
+              <div className="metric-label">AI auto-responses</div>
             </div>
           </div>
 
           {/* Ticket Status Overview */}
           <div className="dashboard-section">
-            <h2>Ticket Status Overview</h2>
-            <div className="status-grid">
-              <div className="status-card open">
-                <h4>Open Tickets</h4>
-                <div className="status-number">{analytics?.openTickets || 0}</div>
+            <h2>Ticket Overview</h2>
+            <div className="overview-stats">
+              <div className="overview-stat">
+                <h4>Total Tickets</h4>
+                <div className="stat-number">{analytics?.totalTickets || 0}</div>
               </div>
-              <div className="status-card in-progress">
-                <h4>In Progress</h4>
-                <div className="status-number">{analytics?.inProgressTickets || 0}</div>
+              <div className="overview-stat">
+                <h4>Resolved Tickets</h4>
+                <div className="stat-number">{analytics?.resolvedTickets || 0}</div>
               </div>
-              <div className="status-card resolved">
-                <h4>Resolved</h4>
-                <div className="status-number">{analytics?.resolvedTickets || 0}</div>
-              </div>
-              <div className="status-card closed">
-                <h4>Closed</h4>
-                <div className="status-number">{analytics?.closedTickets || 0}</div>
+              <div className="overview-stat">
+                <h4>Success Rate</h4>
+                <div className="stat-number">{analytics?.resolutionRate || 0}%</div>
               </div>
             </div>
           </div>
 
-          {/* Agent Performance */}
-          <div className="dashboard-section">
-            <h2>Agent Performance</h2>
-            <div className="agent-stats">
-              {analytics?.agentPerformance?.map(agent => (
-                <div key={agent.agentId} className="agent-card">
-                  <h4>{agent.name}</h4>
-                  <div className="agent-metrics">
-                    <span>Assigned: {agent.assignedTickets}</span>
-                    <span>Resolved: {agent.resolvedTickets}</span>
-                    <span>Avg Time: {agent.avgResolutionTime}h</span>
-                  </div>
-                </div>
-              )) || <p>No agent performance data available</p>}
-            </div>
-          </div>
-
-          {/* SLA Compliance */}
-          <div className="dashboard-section">
-            <h2>SLA Compliance</h2>
-            <div className="sla-overview">
-              <div className="sla-metric">
-                <h4>Response Time SLA</h4>
-                <div className="sla-percentage">{analytics?.responseTimeSLA || 0}%</div>
-              </div>
-              <div className="sla-metric">
-                <h4>Resolution Time SLA</h4>
-                <div className="sla-percentage">{analytics?.resolutionTimeSLA || 0}%</div>
+          {/* Applied Filters Display */}
+          {(filters.startDate || filters.endDate || filters.category || filters.priority) && (
+            <div className="dashboard-section">
+              <h3>Applied Filters</h3>
+              <div className="applied-filters">
+                {filters.startDate && <span>Start: {filters.startDate}</span>}
+                {filters.endDate && <span>End: {filters.endDate}</span>}
+                {filters.category && <span>Category: {filters.category}</span>}
+                {filters.priority && <span>Priority: {filters.priority}</span>}
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Recent Activity */}
+          {/* Data Freshness */}
           <div className="dashboard-section">
-            <h2>Recent Activity</h2>
-            <div className="activity-list">
-              {analytics?.recentActivity?.map((activity, index) => (
-                <div key={index} className="activity-item">
-                  <span className="activity-time">
-                    {new Date(activity.timestamp).toLocaleString()}
-                  </span>
-                  <span className="activity-description">{activity.description}</span>
-                </div>
-              )) || <p>No recent activity</p>}
+            <h3>Data Information</h3>
+            <div className="data-info">
+              <p><strong>Last Updated:</strong> {new Date().toLocaleString()}</p>
+              <p><strong>Date Range:</strong> {analytics?.dateRange?.startDate || 'All time'} to {analytics?.dateRange?.endDate || 'Present'}</p>
             </div>
           </div>
         </main>

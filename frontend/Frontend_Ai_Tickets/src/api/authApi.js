@@ -37,3 +37,8 @@ export const login = (credentials) => {
 export const logout = () => axios.post(`${API_BASE}/logout`).then(res => res.data);
 
 export const getCurrentUser = () => axios.get(`${API_BASE}/me`).then(res => res.data);
+
+export const updateProfile = (profileData) => {
+  const { name, phone } = profileData;
+  return axios.put(`${API_BASE}/me`, { name, phone }).then(res => res.data);
+};
