@@ -37,8 +37,8 @@ export const escalateTicket = (id, reason, summary = null) => {
 };
 
 export const addTicketReply = (id, reply) => {
-  const { content } = reply;
-  return axios.post(`${API_BASE}/tickets/${id}/replies`, { content }).then(res => res.data);
+  const { content, isInternal = false } = reply;
+  return axios.post(`${API_BASE}/tickets/${id}/replies`, { content, isInternal }).then(res => res.data);
 };
 
 export const updateTicketStatus = (id, status) => {

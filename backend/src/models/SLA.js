@@ -111,7 +111,7 @@ const slaRuleSchema = new mongoose.Schema({
   priority: {
     type: Number,
     default: 1,
-    min: [1, 'Priority must be at least 1']
+    min: [0, 'Priority must be at least 0']
   },
 
   isActive: {

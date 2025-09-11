@@ -30,7 +30,7 @@ const TicketForm = ({ onTicketCreated }) => {
     { value: 'low', label: 'Low' },
     { value: 'medium', label: 'Medium' },
     { value: 'high', label: 'High' },
-    { value: 'urgent', label: 'Urgent' }
+    { value: 'critical', label: 'Critical' }
   ];
 
   const maxFileSize = 10 * 1024 * 1024; // 10MB

@@ -2,34 +2,49 @@ const jwt = require("jsonwebtoken");
 const config = require('../config/env');
 
 module.exports = function authentication(req, res, next) {
-    const cookie = req.cookies;// if not working then last option req.headers.cookie then extract token
-    console.log('inside auth middleware')
-    // console.log(cookie);
-
-    if (!cookie) {
-        return res.status(401).json({ message: "No Cookie provided" });
+    let token = null;
+    
+    // Try to get token from Authorization header first (for API testing)
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remove 'Bearer ' prefix
+        console.log('Token found in Authorization header');
+    } 
+    // Fallback to cookies (for web app)
+    else {
+        const cookie = req.cookies;
+        console.log('inside auth middleware');
+        
+        if (!cookie) {
+            return res.status(401).json({ 
+                status: 'error',
+                message: "No authentication provided. Please provide token in Authorization header or cookie." 
+            });
+        }
+        
+        token = cookie.token;
+        console.log('Token found in cookie');
     }
-    console.log("after cookie")
-
-    const token = cookie.token;
-    console.log("before token")
 
     if (!token) {
-        return res.status(405).json({ message: "No token provided" });
+        return res.status(401).json({ 
+            status: 'error',
+            message: "No token provided. Please login first." 
+        });
     }
-    console.log("after token")
 
     jwt.verify(token, config.SECRET_KEY, (error, decoded) => {
         if (error) {
-            return res.status(403).json({ message: "Invalid token" });
+            console.error('JWT verification error:', error.message);
+            return res.status(403).json({ 
+                status: 'error',
+                message: "Invalid or expired token. Please login again." 
+            });
         }
-        console.log("after jwt")
 
-        // Attach the decoded user ID to the request object for further use
-        //console.log(decoded.user)
-
+        // Attach the decoded user to the request object
         req.user = decoded.user;
-        console.log(decoded.user)
+        console.log('Authenticated user:', { userId: decoded.user.userId, role: decoded.user.role });
         next();
     });
 };

@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   // App Configuration
   PORT: process.env.PORT || 3000,
-  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || 'http://localhost:5174',
+  CLIENT_ORIGIN: process.env.CLIENT_ORIGIN ,
   
   // Secret Key for JWT
   SECRET_KEY: process.env.SECRET_KEY || 'your-super-secret-jwt-key-change-in-production',

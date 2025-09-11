@@ -197,42 +197,65 @@ exports.listSLA = async (req, res) => {
 // POST /api/admin/sla
 exports.createSLA = async (req, res) => {
   try {
-    const sla = new SLA({ ...req.body, createdBy: req.user._id });
-    await sla.save();
+    // Remove any fields that shouldn't be set manually
+    const { createdAt, updatedAt, _id, version, ...slaData } = req.body;
     
-    // Create audit log entry
-    await AuditLog.logAction({
-      actor: {
-        userId: req.user._id,
-        userEmail: req.user.email,
-        userName: req.user.name,
-        userRole: req.user.role,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      },
-      action: {
-        type: 'create',
-        description: `Created SLA policy: ${sla.name}`,
-        category: 'admin'
-      },
-      resource: {
-        type: 'sla',
-        id: sla._id
-      },
-      details: {
-        name: sla.name,
-        categories: sla.conditions.categories,
-        responseTimeHours: sla.responseTimeHours,
-        resolutionTimeHours: sla.resolutionTimeHours
-      },
-      result: {
-        success: true
-      }
+    const sla = new SLA({ 
+      ...slaData, 
+      createdBy: req.user.userId // Use userId from auth middleware
     });
     
-    res.status(201).json(sla);
+    await sla.save();
+    
+    // Create audit log entry with proper error handling
+    try {
+      await AuditLog.logAction({
+        actor: {
+          userId: req.user.userId,
+          userRole: req.user.role
+        },
+        action: {
+          type: 'create',
+          description: `Created SLA policy: ${sla.name}`,
+          category: 'admin'
+        },
+        resource: {
+          type: 'sla',
+          id: sla._id.toString(),
+          identifier: sla.name
+        },
+        changes: {
+          after: {
+            name: sla.name,
+            categories: sla.conditions.categories,
+            responseTime: sla.responseTime,
+            resolutionTime: sla.resolutionTime,
+            isDefault: sla.isDefault,
+            isActive: sla.isActive
+          }
+        },
+        result: {
+          success: true,
+          statusCode: 201
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log entry:', auditError);
+      // Continue execution even if audit logging fails
+    }
+    
+    res.status(201).json({
+      status: 'success',
+      message: 'SLA policy created successfully',
+      data: sla
+    });
   } catch (err) {
-    res.status(400).json({ error: 'Failed to create SLA policy', details: err.message });
+    console.error('Error creating SLA policy:', err);
+    res.status(400).json({ 
+      status: 'error',
+      message: 'Failed to create SLA policy', 
+      details: err.message 
+    });
   }
 };
 
@@ -240,53 +263,83 @@ exports.createSLA = async (req, res) => {
 exports.editSLA = async (req, res) => {
   try {
     const oldSLA = await SLA.findById(req.params.id).lean();
+    if (!oldSLA) {
+      return res.status(404).json({ 
+        status: 'error',
+        message: 'SLA policy not found' 
+      });
+    }
+
+    // Remove fields that shouldn't be updated manually
+    const { createdAt, _id, version, createdBy, ...updateData } = req.body;
+    
     const sla = await SLA.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, updatedBy: req.user._id, updatedAt: Date.now() },
+      { 
+        ...updateData, 
+        updatedBy: req.user.userId, // Use userId from auth middleware
+        updatedAt: Date.now() 
+      },
       { new: true, runValidators: true }
     );
-    if (!sla) return res.status(404).json({ error: 'SLA policy not found' });
     
     // Create audit log entry with diffs
-    const changes = {};
-    if (oldSLA.name !== sla.name) changes.name = { from: oldSLA.name, to: sla.name };
-    if (JSON.stringify(oldSLA.conditions) !== JSON.stringify(sla.conditions)) {
-      changes.conditions = { from: oldSLA.conditions, to: sla.conditions };
-    }
-    if (oldSLA.responseTimeHours !== sla.responseTimeHours) {
-      changes.responseTimeHours = { from: oldSLA.responseTimeHours, to: sla.responseTimeHours };
-    }
-    
-    await AuditLog.logAction({
-      actor: {
-        userId: req.user._id,
-        userEmail: req.user.email,
-        userName: req.user.name,
-        userRole: req.user.role,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      },
-      action: {
-        type: 'update',
-        description: `Updated SLA policy: ${sla.name}`,
-        category: 'admin'
-      },
-      resource: {
-        type: 'sla',
-        id: sla._id
-      },
-      details: {
-        name: sla.name,
-        changes
-      },
-      result: {
-        success: true
+    try {
+      const changes = {};
+      if (oldSLA.name !== sla.name) changes.name = { from: oldSLA.name, to: sla.name };
+      if (JSON.stringify(oldSLA.conditions) !== JSON.stringify(sla.conditions)) {
+        changes.conditions = { from: oldSLA.conditions, to: sla.conditions };
       }
-    });
+      if (oldSLA.responseTime !== sla.responseTime) {
+        changes.responseTime = { from: oldSLA.responseTime, to: sla.responseTime };
+      }
+      if (oldSLA.resolutionTime !== sla.resolutionTime) {
+        changes.resolutionTime = { from: oldSLA.resolutionTime, to: sla.resolutionTime };
+      }
+      if (oldSLA.isActive !== sla.isActive) {
+        changes.isActive = { from: oldSLA.isActive, to: sla.isActive };
+      }
+
+      await AuditLog.logAction({
+        actor: {
+          userId: req.user.userId,
+          userRole: req.user.role
+        },
+        action: {
+          type: 'update',
+          description: `Updated SLA policy: ${sla.name}`,
+          category: 'admin'
+        },
+        resource: {
+          type: 'sla',
+          id: sla._id.toString(),
+          identifier: sla.name
+        },
+        changes: {
+          before: oldSLA,
+          after: changes
+        },
+        result: {
+          success: true,
+          statusCode: 200
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log entry:', auditError);
+    }
     
-    res.json(sla);
+    res.status(200).json({
+      status: 'success',
+      message: 'SLA policy updated successfully',
+      data: sla
+    });
   } catch (err) {
-    res.status(400).json({ error: 'Failed to update SLA policy', details: err.message });
+    console.error('Error updating SLA policy:', err);
+    res.status(400).json({ 
+      status: 'error',
+      message: 'Failed to update SLA policy', 
+      details: err.message 
+    });
   }
 };
 
@@ -294,41 +347,60 @@ exports.editSLA = async (req, res) => {
 exports.deleteSLA = async (req, res) => {
   try {
     const sla = await SLA.findById(req.params.id).lean();
-    if (!sla) return res.status(404).json({ error: 'SLA policy not found' });
+    if (!sla) {
+      return res.status(404).json({ 
+        status: 'error',
+        message: 'SLA policy not found' 
+      });
+    }
     
     await SLA.findByIdAndDelete(req.params.id);
     
-    // Create audit log entry
-    await AuditLog.logAction({
-      actor: {
-        userId: req.user._id,
-        userEmail: req.user.email,
-        userName: req.user.name,
-        userRole: req.user.role,
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      },
-      action: {
-        type: 'delete',
-        description: `Deleted SLA policy: ${sla.name}`,
-        category: 'admin'
-      },
-      resource: {
-        type: 'sla',
-        id: req.params.id
-      },
-      details: {
-        name: sla.name,
-        categories: sla.conditions.categories
-      },
-      result: {
-        success: true
-      }
-    });
+    // Create audit log entry with proper error handling
+    try {
+      await AuditLog.logAction({
+        actor: {
+          userId: req.user.userId,
+          userRole: req.user.role
+        },
+        action: {
+          type: 'delete',
+          description: `Deleted SLA policy: ${sla.name}`,
+          category: 'admin'
+        },
+        resource: {
+          type: 'sla',
+          id: req.params.id,
+          identifier: sla.name
+        },
+        changes: {
+          before: {
+            name: sla.name,
+            categories: sla.conditions.categories,
+            isActive: sla.isActive
+          },
+          after: null
+        },
+        result: {
+          success: true,
+          statusCode: 200
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log entry:', auditError);
+    }
     
-    res.json({ message: 'SLA policy deleted' });
+    res.status(200).json({ 
+      status: 'success',
+      message: 'SLA policy deleted successfully' 
+    });
   } catch (err) {
-    res.status(400).json({ error: 'Failed to delete SLA policy', details: err.message });
+    console.error('Error deleting SLA policy:', err);
+    res.status(400).json({ 
+      status: 'error',
+      message: 'Failed to delete SLA policy', 
+      details: err.message 
+    });
   }
 };
 
